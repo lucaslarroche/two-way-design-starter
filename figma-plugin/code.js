@@ -121,6 +121,30 @@ async function txt(content, colorKey, size = 14, weight = "Medium") {
 }
 
 // ---------------------------------------------------------------------------
+// Grid layout helper — applied to every component set after combineAsVariants.
+// Uses WRAP auto-layout so variants flow into rows of `numCols` columns,
+// which matches how Figma UI shows component sets (grouped by first property).
+// ---------------------------------------------------------------------------
+function applyGrid(set, comps, numCols) {
+  var GAP = 16
+  var PAD = 16
+  var itemW = (comps.length > 0) ? comps[0].width : 100
+  set.layoutMode = "HORIZONTAL"
+  set.layoutWrap = "WRAP"
+  set.itemSpacing = GAP
+  set.counterAxisSpacing = GAP
+  set.paddingTop = PAD
+  set.paddingLeft = PAD
+  set.paddingRight = PAD
+  set.paddingBottom = PAD
+  // Fix width first (primaryAxisSizingMode = FIXED), then set counterAxis to
+  // AUTO *after* resize so Figma recalculates height to hug all content rows.
+  set.primaryAxisSizingMode = "FIXED"
+  set.resize(numCols * itemW + (numCols - 1) * GAP + PAD * 2, set.height)
+  set.counterAxisSizingMode = "AUTO"
+}
+
+// ---------------------------------------------------------------------------
 // BUTTON  (8 variants × 3 states = 24 components)
 // ---------------------------------------------------------------------------
 const BUTTON_SPECS = [
@@ -221,6 +245,7 @@ async function buildButton() {
 
   const set = figma.combineAsVariants(comps, figma.currentPage)
   set.name = "Button"
+  applyGrid(set, comps, 3)  // 3 cols = one per State (Default / Hover / Focus)
   return set
 }
 
@@ -253,12 +278,13 @@ async function buildInput() {
       c.counterAxisSizingMode = "AUTO"
       c.fills = []
 
-      // Label row
-      const labelTxt = await txt("Label", "gray/900", 14, "Medium")
-      labelTxt.visible = showLabel
-      c.appendChild(labelTxt)
+      // Label — only added when visible so it takes no layout space otherwise
+      if (showLabel) {
+        c.appendChild(await txt("Label", "gray/900", 14, "Medium"))
+      }
 
-      // Field frame
+      // Field — append placeholder first so Figma calculates AUTO height,
+      // then lock only the width to 280 (height stays auto-calculated)
       const field = figma.createFrame()
       field.layoutMode = "HORIZONTAL"
       field.primaryAxisAlignItems = "MIN"
@@ -270,13 +296,14 @@ async function buildInput() {
       field.cornerRadius = 8
       field.primaryAxisSizingMode = "FIXED"
       field.counterAxisSizingMode = "AUTO"
-      field.resize(280, 10)
 
       applyFill(field, s.fieldFill)
       applyStroke(field, s.border)
       applyRing(field, s.ring, s.ringSpread)
 
       field.appendChild(await txt("Placeholder", "gray/400", 14, "Regular"))
+      field.resize(280, field.height)  // fix width only; height already auto-sized
+
       c.appendChild(field)
 
       comps.push(c)
@@ -285,6 +312,7 @@ async function buildInput() {
 
   const set = figma.combineAsVariants(comps, figma.currentPage)
   set.name = "Input"
+  applyGrid(set, comps, 2)  // 2 cols = one per Label option (True / False)
   return set
 }
 
@@ -320,8 +348,13 @@ async function buildCheckbox() {
       c.counterAxisSizingMode = "AUTO"
       c.fills = []
 
-      // Checkbox box (16 × 16)
+      // Checkbox box (16 × 16, rounded = 4px — matches Flowbite)
       const box = figma.createFrame()
+      box.layoutMode = "HORIZONTAL"
+      box.primaryAxisAlignItems = "CENTER"
+      box.counterAxisAlignItems = "CENTER"
+      box.primaryAxisSizingMode = "FIXED"
+      box.counterAxisSizingMode = "FIXED"
       box.resize(16, 16)
       box.cornerRadius = 4
       applyFill(box, s.boxFill)
@@ -329,18 +362,15 @@ async function buildCheckbox() {
       applyRing(box, s.ring, s.ringSpread)
 
       if (s.checkmark) {
-        box.layoutMode = "HORIZONTAL"
-        box.primaryAxisAlignItems = "CENTER"
-        box.counterAxisAlignItems = "CENTER"
         box.appendChild(await txt("✓", "white", 10, "Medium"))
       }
 
       c.appendChild(box)
 
-      // Label
-      const labelTxt = await txt("Label", "gray/900", 14, "Medium")
-      labelTxt.visible = showLabel
-      c.appendChild(labelTxt)
+      // Label — only added when visible so it takes no layout space otherwise
+      if (showLabel) {
+        c.appendChild(await txt("Label", "gray/900", 14, "Medium"))
+      }
 
       comps.push(c)
     }
@@ -348,6 +378,7 @@ async function buildCheckbox() {
 
   const set = figma.combineAsVariants(comps, figma.currentPage)
   set.name = "Checkbox"
+  applyGrid(set, comps, 2)  // 2 cols = one per Label option (True / False)
   return set
 }
 
