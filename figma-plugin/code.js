@@ -1,14 +1,21 @@
 /**
- * two-way-design-starter — Create Components
+ * two-way-design-starter — Create Styles + Components
  *
- * Generates Button, Input, and Checkbox component sets in a "🧩 Components"
- * page, using the exact specs from the React source:
+ * Step 1 — buildStyles(): creates (or updates) one Figma paint style per
+ *   entry in the RGB palette, named "color/blue/700" etc.  These styles are
+ *   the bridge between Figma and tokens.json:
+ *     - figma:push (tokens-to-figma.ts) updates them when code changes
+ *     - figma:pull (figma-to-tokens.ts) reads them back into tokens.json
+ *
+ * Step 2 — buildButton / buildInput / buildCheckbox: generates component sets
+ *   whose fills reference those local styles via fillStyleId.  When a style
+ *   value changes (from a push), every component that references it updates
+ *   automatically — no need to re-run the plugin.
+ *
+ * Components:
  *   - Button: 8 variants × 3 states (Default / Hover / Focus)
  *   - Input:  3 states × 2 label variants
  *   - Checkbox: 6 states (3 × checked/unchecked) × 2 label variants
- *
- * All fills reference local color styles (color/blue/700, etc.).
- * If a style isn't found, falls back to the hardcoded hex from tokens.json.
  */
 
 // ---------------------------------------------------------------------------
@@ -39,6 +46,28 @@ const RGB = {
   "gray/400":    { r: 0.600, g: 0.631, b: 0.686 },
   "gray/800":    { r: 0.118, g: 0.161, b: 0.224 },
   "gray/900":    { r: 0.063, g: 0.094, b: 0.157 },
+}
+
+// ---------------------------------------------------------------------------
+// Build (or update) Figma paint styles from the RGB palette.
+// Must run before components are built so findStyle() always succeeds.
+// ---------------------------------------------------------------------------
+function buildStyles() {
+  var existing = figma.getLocalPaintStyles()
+  var existingMap = {}
+  existing.forEach(function(s) { existingMap[s.name] = s })
+
+  Object.keys(RGB).forEach(function(key) {
+    var name = key === "white" ? "color/white" : "color/" + key
+    var rgb  = RGB[key]
+    var paint = { type: "SOLID", color: { r: rgb.r, g: rgb.g, b: rgb.b } }
+
+    var style = existingMap[name] || figma.createPaintStyle()
+    style.name   = name
+    style.paints = [paint]
+  })
+
+  console.log("✓ " + Object.keys(RGB).length + " color styles ready")
 }
 
 // ---------------------------------------------------------------------------
@@ -388,6 +417,9 @@ async function buildCheckbox() {
 async function main() {
   await figma.loadFontAsync({ family: "Inter", style: "Regular" })
   await figma.loadFontAsync({ family: "Inter", style: "Medium" })
+
+  // Step 1 — ensure all color styles exist so component fills can link to them
+  buildStyles()
 
   // Create or switch to Components page
   let page = figma.root.children.find((p) => p.name === "🧩 Components")
