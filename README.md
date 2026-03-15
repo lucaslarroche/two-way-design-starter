@@ -1,19 +1,20 @@
 # two-way-design-starter
 
-A minimal open-source starter demonstrating **bidirectional design system sync** between Figma and Storybook/code using Claude Code.
+An experiment in **bidirectional design system sync** between Figma and code, built entirely with Claude Code. No manual coding.
 
-→ [View on GitHub](https://github.com/lucaslarroche/two-way-design-starter)
+> Full experiment report → [`docs/experiment-report.md`](./docs/experiment-report.md) · Origin prompt → [`docs/genesis.md`](./docs/genesis.md)
+
+![Figma components and color styles](public/figma-components.png)
 
 ---
 
 ## What this is
 
-A practical starting point that shows how a small design system can stay in sync between Figma and your codebase — in both directions — using Claude Code slash commands.
+A minimal starter that shows how a small design system can stay in sync between Figma and your codebase in both directions, using Claude Code slash commands as the sync agent.
 
-**Sync directions:**
+The repo includes a Figma plugin that generates all component sets programmatically, a Next.js demo page, and a Storybook. All seeded from the same design tokens.
 
-- `Figma → code` — Change a color style in Figma, pull it into tokens and CSS with one command
-- `code → Figma` — Edit `_theme.css`, push the change to Figma by re-running the plugin
+→ [Read the full experiment report](./docs/experiment-report.md) · [How this was built](./docs/genesis.md)
 
 ---
 
@@ -30,6 +31,86 @@ A practical starting point that shows how a small design system can stay in sync
 
 ---
 
+## 1. Clone and run
+
+```bash
+git clone https://github.com/lucaslarroche/two-way-design-starter.git
+cd two-way-design-starter
+npm install
+npm run tokens:build    # generate CSS variables from tokens.json
+npm run dev             # http://localhost:3000
+npm run storybook       # http://localhost:6006
+```
+
+![Login form demo](public/login-form.png)
+
+---
+
+## 2. Figma setup
+
+**Create a Figma file and get your credentials:**
+
+1. Create a new Figma file
+2. Copy the file ID from the URL: `figma.com/design/**FILE_ID**/your-file-name`
+3. Go to [figma.com/settings](https://www.figma.com/settings) → **Security** → **Personal access tokens** → **Generate new token**
+4. Enable at minimum: `file_content:read`, `file_metadata:read`, `library_assets:read`
+5. Copy `.env.example` to `.env.local` and fill in your credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+```
+FIGMA_TOKEN=your_personal_access_token
+FIGMA_FILE_ID=your_file_id
+```
+
+---
+
+## 3. Run the Figma plugin
+
+The plugin generates all color styles and component sets (Button, Input, Checkbox) directly in your Figma file.
+
+1. In Figma, go to **Plugins → Development → Import plugin from manifest**
+2. Point it at `figma-plugin/manifest.json` in this repo
+3. Run the plugin — it creates all color styles and component sets on a `🧩 Components` page
+4. **Publish the styles**: Main menu → Libraries → Publish changes
+
+![Figma component sets](public/figma-components.png)
+
+---
+
+## 4. Figma → Code: sync a color change from Figma
+
+When a designer changes a color style in Figma:
+
+1. Edit a color style in Figma (e.g. open `color/blue/700` and change the value)
+2. **Publish** the updated styles (Main menu → Libraries → Publish)
+3. In Claude Code, run:
+
+```
+/sync-figma-to-code
+```
+
+Claude will pull the updated styles, show you a diff, and rebuild the CSS variables after your approval.
+
+---
+
+## 5. Code → Figma: sync a color change from code
+
+When a developer changes a color in the codebase:
+
+1. Edit a CSS variable in `src/app/_theme.css` (between `/* tokens:start */` and `/* tokens:end */`)
+2. In Claude Code, run:
+
+```
+/sync-code-to-figma
+```
+
+Claude will detect the change, update `tokens.json`, rebuild the Figma plugin palette, and ask you to re-run the plugin in Figma to apply the update.
+
+---
+
 ## Components
 
 | Component  | Variants                                                            |
@@ -38,82 +119,7 @@ A practical starting point that shows how a small design system can stay in sync
 | `Input`    | one size, optional label                                            |
 | `Checkbox` | one size, optional label                                            |
 
----
-
-## Prerequisites
-
-- Node.js 20+
-- A Figma account (free tier works)
-- Claude Code: `npm install -g @anthropic-ai/claude-code`
-- An Anthropic API key or Claude Pro/Team account
-
----
-
-## Getting started
-
-```bash
-git clone https://github.com/lucaslarroche/two-way-design-starter.git
-cd two-way-design-starter
-npm install
-cp .env.example .env.local   # fill in FIGMA_TOKEN and FIGMA_FILE_ID
-npm run tokens:build          # generate CSS variables from tokens.json
-npm run dev                   # http://localhost:3000
-npm run storybook             # http://localhost:6006
-```
-
----
-
-## Figma setup
-
-1. Go to [figma.com/settings](https://www.figma.com/settings) → **Personal access tokens** → **Generate new token**. Enable at minimum: `file_content:read`, `file_metadata:read`, `library_assets:read`.
-2. Copy your token into `.env.local` as `FIGMA_TOKEN`
-3. Create a new Figma file and copy the file ID from the URL: `figma.com/design/**FILE_ID**/your-file-name`
-4. Add it to `.env.local` as `FIGMA_FILE_ID`
-5. In Figma, go to **Plugins → Development → Import plugin from manifest** and point it at `figma-plugin/manifest.json`
-6. Run the plugin once — it creates all color styles and component sets automatically
-7. **Publish** the styles in Figma (Main menu → Libraries → Publish) so the REST API can read them
-
----
-
-## Two-way sync with Claude Code
-
-```bash
-cd two-way-design-starter
-claude   # open Claude Code in the repo
-```
-
-Then use the slash commands:
-
-| Command               | Direction    | What it does                                                              |
-| --------------------- | ------------ | ------------------------------------------------------------------------- |
-| `/sync-figma-to-code` | Figma → code | Reads Figma color styles, diffs against tokens.json, updates with approval |
-| `/sync-code-to-figma` | code → Figma | Reads `_theme.css`, diffs against tokens.json, rebuilds plugin palette, prompts you to re-run the plugin in Figma |
-
-Both commands always **show a diff and ask for confirmation** before writing anything.
-
----
-
-## Design tokens
-
-`src/tokens/tokens.json` is the single source of truth.
-
-CSS variables are generated from it:
-
-```bash
-npm run tokens:build   # updates the /* tokens:start */ … /* tokens:end */ block in _theme.css
-```
-
-Tailwind CSS v4 reads CSS variables natively — no `tailwind.config.ts` needed.
-
-**Naming convention (required for sync to work):**
-
-| Token path        | Figma style name  | CSS variable        |
-| ----------------- | ----------------- | ------------------- |
-| `color.blue.700`  | `color/blue/700`  | `--color-blue-700`  |
-| `color.green.700` | `color/green/700` | `--color-green-700` |
-| `color.gray.900`  | `color/gray/900`  | `--color-gray-900`  |
-
-Token values are hex colors sourced from Figma. `tokens:build` writes them into a `@theme` block in `_theme.css`, overriding Tailwind v4's built-in oklch values so the entire codebase uses your Figma colors.
+![Button variants in Storybook](public/button-component.png)
 
 ---
 
@@ -126,41 +132,10 @@ Token values are hex colors sourced from Figma. `tokens:build` writes them into 
 | `npm run tokens:build`  | Regenerate CSS variables from tokens.json                 |
 | `npm run plugin:build`  | Regenerate RGB palette in figma-plugin/code.js            |
 | `npm run figma:pull`    | CLI: Figma color styles → tokens.json (no AI)             |
-| `npm run figma:push`    | CLI: rebuild plugin palette, then re-run plugin in Figma  |
-
----
-
-## Project structure
-
-```
-two-way-design-starter/
-├── .claude/commands/
-│   ├── sync-figma-to-code.md    ← Claude slash command
-│   └── sync-code-to-figma.md   ← Claude slash command
-├── .storybook/
-├── figma-plugin/
-│   ├── manifest.json            ← plugin entry point
-│   └── code.js                  ← generates styles + components in Figma
-├── scripts/
-│   ├── build-tokens.ts          ← tokens.json → CSS variables
-│   ├── build-plugin.ts          ← tokens.json → RGB palette in code.js
-│   ├── figma-to-tokens.ts       ← Figma color styles → tokens.json
-│   └── tokens-to-figma.ts       ← rebuilds plugin palette for re-run
-├── src/
-│   ├── app/
-│   │   ├── page.tsx             ← login form demo
-│   │   └── _theme.css           ← CSS vars generated from tokens
-│   ├── components/
-│   │   ├── Button/
-│   │   ├── Input/
-│   │   └── Checkbox/
-│   └── tokens/tokens.json       ← single source of truth
-├── .env.example
-└── CLAUDE.md                    ← project brief for Claude
-```
+| `npm run figma:push`    | CLI: rebuild plugin palette (then re-run plugin in Figma) |
 
 ---
 
 ## License
 
-MIT — fork it, break it, make it yours.
+MIT. Fork it, break it, make it yours.
