@@ -1,0 +1,44 @@
+{
+  "name": "two-way-design-starter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "concurrently --names \"next,storybook\" --prefix-colors \"blue,magenta\" \"next dev\" \"storybook dev -p 6006\"",
+    "format": "prettier --write .",
+    "lint": "eslint",
+    "check": "prettier --write . && eslint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "tokens:build": "npx tsx scripts/build-tokens.ts",
+    "figma:pull": "npx tsx scripts/figma-to-tokens.ts",
+    "figma:push": "npx tsx scripts/tokens-to-figma.ts"
+  },
+  "dependencies": {
+    "classnames": "^2.5.1",
+    "next": "16.1.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.2.19",
+    "@storybook/nextjs-vite": "^10.2.19",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "eslint-plugin-storybook": "10.2.19",
+    "prettier": "^3.8.1",
+    "storybook": "^10.2.19",
+    "tailwindcss": "4.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vite": "^6.4.1"
+  }
+}
