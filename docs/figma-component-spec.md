@@ -42,7 +42,7 @@ Reference these style names in every component layer.
 | color/yellow/400   | #fdc700  | Warning button bg                      |
 | color/yellow/500   | #f0b100  | Warning button hover bg                |
 | color/gray/50      | #f9fafb  | Input background                       |
-| color/gray/100     | #f3f4f6  | Checkbox background, focus ring        |
+| color/gray/100     | #f3f4f6  | Secondary/Ghost focus ring             |
 | color/gray/200     | #e5e7eb  | Secondary button border                |
 | color/gray/300     | #d1d5dc  | Input/Ghost border, Dark focus ring    |
 | color/gray/400     | #99a1af  | Input/Checkbox hover border, placeholder |
@@ -241,9 +241,9 @@ Checkbox (component)
 
 | State          | Fill            | Border (1px)    | Ring                       |
 | -------------- | --------------- | --------------- | -------------------------- |
-| default        | color/gray/100  | color/gray/300  | –                          |
-| hover          | color/gray/100  | color/gray/400  | –                          |
-| focus          | color/gray/100  | color/blue/500  | color/blue/500 (2px)       |
+| default        | color/white     | color/gray/300  | –                          |
+| hover          | color/white     | color/gray/400  | –                          |
+| focus          | color/white     | color/blue/500  | color/blue/500 (2px)       |
 | checked        | color/blue/600  | color/blue/600  | –                          |
 | checked+hover  | color/blue/600  | color/blue/600  | –                          |
 | checked+focus  | color/blue/600  | color/blue/600  | color/blue/500 (2px)       |

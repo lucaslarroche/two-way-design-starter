@@ -320,9 +320,9 @@ async function buildInput() {
 // CHECKBOX  (6 state combinations × 2 label variants = 12 components)
 // ---------------------------------------------------------------------------
 const CHECKBOX_STATES = [
-  { checked: "False", state: "Default", boxFill: "gray/100", border: "gray/300", ring: null,        ringSpread: 0, checkmark: false },
-  { checked: "False", state: "Hover",   boxFill: "gray/100", border: "gray/400", ring: null,        ringSpread: 0, checkmark: false },
-  { checked: "False", state: "Focus",   boxFill: "gray/100", border: "blue/500", ring: "blue/500",  ringSpread: 2, checkmark: false },
+  { checked: "False", state: "Default", boxFill: "white", border: "gray/300", ring: null,        ringSpread: 0, checkmark: false },
+  { checked: "False", state: "Hover",   boxFill: "white", border: "gray/400", ring: null,        ringSpread: 0, checkmark: false },
+  { checked: "False", state: "Focus",   boxFill: "white", border: "blue/500", ring: "blue/500",  ringSpread: 2, checkmark: false },
   { checked: "True",  state: "Default", boxFill: "blue/600", border: "blue/600", ring: null,        ringSpread: 0, checkmark: true  },
   { checked: "True",  state: "Hover",   boxFill: "blue/600", border: "blue/600", ring: null,        ringSpread: 0, checkmark: true  },
   { checked: "True",  state: "Focus",   boxFill: "blue/600", border: "blue/600", ring: "blue/500",  ringSpread: 2, checkmark: true  },
