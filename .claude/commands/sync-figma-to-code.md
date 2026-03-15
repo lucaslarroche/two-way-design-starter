@@ -1,104 +1,80 @@
 ---
-description: Pull design tokens and component styles from Figma and update the codebase
+description: Pull design tokens from Figma color styles and update the codebase
 ---
 
 You are performing a **Figma → Code** sync for the two-way-design-starter design system.
 
 ## Goal
 
-Read the current state of the Figma file and:
+Pull the latest color values from Figma into `src/tokens/tokens.json`, rebuild
+CSS variables, and show a clear summary of what changed.
 
-1. Update `src/tokens/tokens.json` with any changed values
-2. Regenerate CSS variables (`npm run tokens:build`)
-3. Flag any component-level diffs that need manual review
-4. Never write to any file without showing a diff first and getting my approval
+Never modify files without showing a diff first and getting approval.
 
 ---
 
-## Step 1 — Load environment
+## Step 1 — Check environment
 
-Read `.env.local` and extract:
-
-- `FIGMA_TOKEN`
-- `FIGMA_FILE_ID`
-
-If either is missing or empty, stop and tell me exactly what to add to `.env.local`.
+Read `.env.local` and confirm `FIGMA_TOKEN` and `FIGMA_FILE_ID` are present.
+If either is missing, stop and tell the user exactly what to add.
 
 ---
 
-## Step 2 — Read the Figma file via MCP
+## Step 2 — Snapshot current tokens
 
-Use the Figma MCP tool to fetch the file at `FIGMA_FILE_ID`.
-
-Extract from Figma:
-
-- **Color styles** → hex fill values mapped to token paths in `src/tokens/tokens.json`
-
-Use the naming convention:
-
-- Figma style `color/blue/700` → token path `color.blue.700` → value is the hex fill color
-- Figma style `color/gray/900` → token path `color.gray.900`
+Read `src/tokens/tokens.json` and keep it in memory as the "before" state.
 
 ---
 
-## Step 3 — Read current tokens
+## Step 3 — Run the pull script
 
-Read `src/tokens/tokens.json` in full.
+```bash
+npm run figma:pull
+```
+
+This fetches all color styles from the Figma file and writes updated values
+directly into `src/tokens/tokens.json`.
 
 ---
 
 ## Step 4 — Compute and show the diff
 
-Compare extracted Figma hex values against current token values.
+Read `src/tokens/tokens.json` again and compare it to the "before" snapshot.
 
-Show a human-readable diff in this format:
+Show a human-readable diff:
 
 ```
 CHANGED
   color.blue.700: #1d4ed8 → #1447e6
   color.red.700:  #b91c1c → #c10007
 
-ADDED (in Figma, not in tokens.json)
-  color.teal.500: #00bba7
-
-MISSING (in tokens.json, not in Figma — will NOT be deleted)
-  color.mauve.900: #1d161e
+NO CHANGES
+  ✓ tokens already match Figma
 ```
 
-Then ask: **"Apply these changes? (yes / skip individual items / cancel)"**
+Ask: **"Apply these changes and rebuild CSS? (yes / cancel)"**
 
-Do not touch any file until I confirm.
+If the user cancels, restore the original `src/tokens/tokens.json` from the
+"before" snapshot.
 
 ---
 
-## Step 5 — Apply approved changes
+## Step 5 — Rebuild CSS variables
 
-For each approved change, update `src/tokens/tokens.json`.
-
-Then run:
+If approved, run:
 
 ```bash
 npm run tokens:build
 ```
 
-Confirm that it ran without errors.
+Confirm it ran without errors.
 
 ---
 
-## Step 6 — Check for component-level issues
-
-For each changed token, search `src/components/**/*.tsx` for hardcoded hex values that
-should now reference a CSS variable instead.
-
-Report them as warnings — do not auto-fix component code.
-
----
-
-## Step 7 — Summary
+## Step 6 — Summary
 
 Print a clean final summary:
 
 - How many tokens changed
 - Which files were updated
-- Warnings requiring manual attention
-- Suggested next step (e.g. "run `npm run storybook` to review visually")
+- Suggested next step (`npm run dev` or `npm run storybook` to review visually)

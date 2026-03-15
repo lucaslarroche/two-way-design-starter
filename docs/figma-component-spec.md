@@ -1,8 +1,8 @@
 # Figma Component Spec
 
 Generated from the React source. Every value here maps directly to a Tailwind class
-and a Figma color style. Build these as Figma components with the exact values below
-so the sync round-trip works correctly.
+and a Figma color style. These components are generated automatically by running
+the Figma plugin — this spec is for reference and manual verification.
 
 ---
 
@@ -19,7 +19,7 @@ so the sync round-trip works correctly.
 
 ## Color styles to use
 
-All styles are already in your Figma file from the Tailwind v4 plugin.
+These styles are created automatically when you run the Figma plugin.
 Reference these style names in every component layer.
 
 | Style name         | Hex      | Used for                               |
@@ -47,8 +47,7 @@ Reference these style names in every component layer.
 | color/gray/300     | #d1d5dc  | Input/Ghost border, Dark focus ring    |
 | color/gray/400     | #99a1af  | Input/Checkbox hover border, placeholder |
 | color/gray/800     | #1e2939  | Dark button bg                         |
-| color/gray/900     | #101828  | Dark button hover bg                   |
-| color/gray/900     | #101828  | Secondary/Ghost/Input/Checkbox text    |
+| color/gray/900     | #101828  | Dark button hover bg, Secondary/Ghost/Input/Checkbox text |
 
 ---
 
@@ -282,8 +281,12 @@ Suggested page/layer structure:
 
 Once components are in Figma, test the sync round-trip:
 
-1. Change a color style in Figma (e.g. edit `color/blue/700`)
+**Figma → code:**
+1. Change a color style in Figma (e.g. edit `color/blue/700`), then publish
 2. Run `npm run figma:pull` — verify `tokens.json` updates
-3. Run `npm run tokens:build` — verify `globals.css` updates
-4. Change a value in `tokens.json` directly
-5. Run `npm run figma:push` — verify Figma style updates
+3. Run `npm run tokens:build` — verify `_theme.css` updates
+
+**Code → Figma:**
+1. Edit a color in `src/app/_theme.css`
+2. Run `npm run figma:push` — rebuilds `figma-plugin/code.js`
+3. Re-run the Figma plugin — verify styles and components update

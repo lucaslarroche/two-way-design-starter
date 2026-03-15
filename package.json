@@ -12,6 +12,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "tokens:build": "npx tsx scripts/build-tokens.ts",
+    "plugin:build": "npx tsx scripts/build-plugin.ts",
     "figma:pull": "npx tsx scripts/figma-to-tokens.ts",
     "figma:push": "npx tsx scripts/tokens-to-figma.ts"
   },

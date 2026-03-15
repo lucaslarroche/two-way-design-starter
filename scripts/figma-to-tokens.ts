@@ -103,6 +103,10 @@ async function run() {
   const currentTokens = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf-8"))
   let updateCount = 0
 
+  // Track first-seen value per token path to detect duplicate styles.
+  // e.g. "Color/Blue/700" and "color/blue/700" both normalise to color.blue.700
+  const seen: Record<string, { name: string; hex: string }> = {}
+
   for (const [, meta] of Object.entries(stylesMeta)) {
     const { name, style_type, node_id } = meta as {
       name: string
@@ -117,7 +121,20 @@ async function run() {
 
     const hex = hexFromRgba(fill.color.r, fill.color.g, fill.color.b)
     const tokenPath = figmaNameToTokenPath(name)
+    const pathKey = tokenPath.join(".")
 
+    // Warn about duplicates with conflicting values — this usually means the
+    // Figma plugin created a lowercase style alongside a user-created one.
+    if (seen[pathKey] && seen[pathKey].hex !== hex) {
+      console.warn(
+        `  ⚠️  Duplicate styles for "${pathKey}":\n` +
+        `       "${seen[pathKey].name}" = ${seen[pathKey].hex}\n` +
+        `       "${name}" = ${hex}  ← skipped (delete one of these styles in Figma)`
+      )
+      continue
+    }
+
+    seen[pathKey] = { name, hex }
     setNestedValue(currentTokens, tokenPath, hex)
     console.log(`  ✓  ${name} → ${hex}`)
     updateCount++

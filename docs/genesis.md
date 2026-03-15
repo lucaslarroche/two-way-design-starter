@@ -8,9 +8,9 @@ to what you see here.
 
 ## The Prompt
 
-I want to build an open-source starter repository, plus a full Google Slides
-presentation in Markdown, to demonstrate a two-way design system sync between
-Figma and code using Claude Code.
+I want to build an open-source starter repository, plus a full presentation
+in Markdown, to demonstrate a two-way design system sync between Figma and
+code using Claude Code.
 
 ### Main goal
 

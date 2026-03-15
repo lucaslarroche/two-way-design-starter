@@ -4,13 +4,13 @@
  * Step 1 — buildStyles(): creates (or updates) one Figma paint style per
  *   entry in the RGB palette, named "color/blue/700" etc.  These styles are
  *   the bridge between Figma and tokens.json:
- *     - figma:push (tokens-to-figma.ts) updates them when code changes
+ *     - figma:push (via plugin:build) embeds latest values → re-run plugin to apply
  *     - figma:pull (figma-to-tokens.ts) reads them back into tokens.json
  *
  * Step 2 — buildButton / buildInput / buildCheckbox: generates component sets
  *   whose fills reference those local styles via fillStyleId.  When a style
- *   value changes (from a push), every component that references it updates
- *   automatically — no need to re-run the plugin.
+ *   value changes (re-run the plugin after a push), every component that
+ *   references it updates automatically.
  *
  * Components:
  *   - Button: 8 variants × 3 states (Default / Hover / Focus)
@@ -19,34 +19,37 @@
  */
 
 // ---------------------------------------------------------------------------
-// Palette fallback (hex → RGB, matches src/tokens/tokens.json)
+// Palette — generated from src/tokens/tokens.json via `npm run plugin:build`.
+// Do not edit this block by hand; run plugin:build to regenerate it.
 // ---------------------------------------------------------------------------
+// rgb:start
 const RGB = {
-  white:         { r: 1,     g: 1,     b: 1     },
-  "blue/50":     { r: 0.937, g: 0.965, b: 1     },
-  "blue/100":    { r: 0.859, g: 0.918, b: 0.996 },
-  "blue/300":    { r: 0.557, g: 0.773, b: 1     },
-  "blue/500":    { r: 0.169, g: 0.498, b: 1     },
-  "blue/600":    { r: 0.082, g: 0.365, b: 0.988 },
-  "blue/700":    { r: 0.078, g: 0.278, b: 0.902 },
-  "blue/800":    { r: 0.098, g: 0.235, b: 0.722 },
-  "green/300":   { r: 0.482, g: 0.945, b: 0.659 },
-  "green/700":   { r: 0,     g: 0.510, b: 0.212 },
-  "green/800":   { r: 0.004, g: 0.400, b: 0.188 },
-  "red/300":     { r: 1,     g: 0.635, b: 0.635 },
-  "red/700":     { r: 0.757, g: 0,     b: 0.027 },
-  "red/800":     { r: 0.624, g: 0.027, b: 0.071 },
-  "yellow/300":  { r: 1,     g: 0.875, b: 0.125 },
-  "yellow/400":  { r: 0.992, g: 0.780, b: 0     },
-  "yellow/500":  { r: 0.941, g: 0.694, b: 0     },
-  "gray/50":     { r: 0.976, g: 0.980, b: 0.984 },
-  "gray/100":    { r: 0.953, g: 0.957, b: 0.965 },
-  "gray/200":    { r: 0.898, g: 0.906, b: 0.922 },
-  "gray/300":    { r: 0.820, g: 0.835, b: 0.863 },
-  "gray/400":    { r: 0.600, g: 0.631, b: 0.686 },
-  "gray/800":    { r: 0.118, g: 0.161, b: 0.224 },
-  "gray/900":    { r: 0.063, g: 0.094, b: 0.157 },
+  white:         { r: 1, g: 1, b: 1 },
+  "blue/50":   { r: 0.937, g: 0.965, b: 1 },
+  "blue/100":  { r: 0.859, g: 0.918, b: 0.996 },
+  "blue/300":  { r: 0.557, g: 0.773, b: 1 },
+  "blue/500":  { r: 0.169, g: 0.498, b: 1 },
+  "blue/600":  { r: 0.082, g: 0.365, b: 0.988 },
+  "blue/700":  { r: 0.078, g: 0.278, b: 0.902 },
+  "blue/800":  { r: 0.098, g: 0.235, b: 0.722 },
+  "green/300": { r: 0.482, g: 0.945, b: 0.659 },
+  "green/700": { r: 0, g: 0.51, b: 0.212 },
+  "green/800": { r: 0.004, g: 0.4, b: 0.188 },
+  "red/300":   { r: 1, g: 0.635, b: 0.635 },
+  "red/700":   { r: 0.757, g: 0, b: 0.027 },
+  "red/800":   { r: 0.624, g: 0.027, b: 0.071 },
+  "yellow/300":{ r: 1, g: 0.875, b: 0.125 },
+  "yellow/400":{ r: 0.992, g: 0.78, b: 0 },
+  "yellow/500":{ r: 0.941, g: 0.694, b: 0 },
+  "gray/50":   { r: 0.976, g: 0.98, b: 0.984 },
+  "gray/100":  { r: 0.953, g: 0.957, b: 0.965 },
+  "gray/200":  { r: 0.898, g: 0.906, b: 0.922 },
+  "gray/300":  { r: 0.82, g: 0.835, b: 0.863 },
+  "gray/400":  { r: 0.6, g: 0.631, b: 0.686 },
+  "gray/800":  { r: 0.118, g: 0.161, b: 0.224 },
+  "gray/900":  { r: 0.063, g: 0.094, b: 0.157 },
 }
+// rgb:end
 
 // ---------------------------------------------------------------------------
 // Build (or update) Figma paint styles from the RGB palette.
@@ -55,27 +58,35 @@ const RGB = {
 function buildStyles() {
   var existing = figma.getLocalPaintStyles()
   var existingMap = {}
-  existing.forEach(function(s) { existingMap[s.name] = s })
+  existing.forEach(function(s) { existingMap[s.name.toLowerCase()] = s })
 
+  var created = 0, updated = 0
   Object.keys(RGB).forEach(function(key) {
     var name = key === "white" ? "color/white" : "color/" + key
-    var rgb  = RGB[key]
+    var rgb   = RGB[key]
     var paint = { type: "SOLID", color: { r: rgb.r, g: rgb.g, b: rgb.b } }
 
-    var style = existingMap[name] || figma.createPaintStyle()
-    style.name   = name
-    style.paints = [paint]
+    var style = existingMap[name.toLowerCase()]
+    if (style) {
+      style.paints = [paint]
+      updated++
+    } else {
+      style = figma.createPaintStyle()
+      style.name   = name
+      style.paints = [paint]
+      created++
+    }
   })
 
-  console.log("✓ " + Object.keys(RGB).length + " color styles ready")
+  console.log("✓ color styles ready (" + created + " created, " + updated + " updated)")
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 function findStyle(key) {
-  const name = key === "white" ? "color/white" : "color/" + key
-  const match = figma.getLocalPaintStyles().find(function(s) { return s.name === name })
+  const name = (key === "white" ? "color/white" : "color/" + key).toLowerCase()
+  const match = figma.getLocalPaintStyles().find(function(s) { return s.name.toLowerCase() === name })
   return match || null
 }
 

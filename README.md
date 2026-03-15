@@ -12,8 +12,8 @@ A practical starting point that shows how a small design system can stay in sync
 
 **Sync directions:**
 
-- `Figma → code` — Pull latest styles from Figma, update design tokens and CSS variables
-- `code → Figma` — Push current token values to Figma styles
+- `Figma → code` — Change a color style in Figma, pull it into tokens and CSS with one command
+- `code → Figma` — Edit `_theme.css`, push the change to Figma by re-running the plugin
 
 ---
 
@@ -27,7 +27,6 @@ A practical starting point that shows how a small design system can stay in sync
 | Components | Custom (no UI library)  |
 | Storybook  | v10                     |
 | Sync agent | Claude Code             |
-| Figma MCP  | figma-developer-mcp     |
 
 ---
 
@@ -66,12 +65,13 @@ npm run storybook             # http://localhost:6006
 
 ## Figma setup
 
-1. Go to [figma.com/settings](https://www.figma.com/settings) → **Personal access tokens** → **Generate new token**
+1. Go to [figma.com/settings](https://www.figma.com/settings) → **Personal access tokens** → **Generate new token**. Enable at minimum: `file_content:read`, `file_metadata:read`, `library_assets:read`.
 2. Copy your token into `.env.local` as `FIGMA_TOKEN`
-3. Create a new Figma file. Use the [Tailwind CSS v4 Variables to Figma](https://www.figma.com/community/plugin/1463378448591477945) plugin to import the full Tailwind v4 palette as local color styles
-4. Name your color styles using this convention: `color/blue/700`, `color/gray/900`, etc.
-5. Copy the file ID from the URL: `figma.com/design/**FILE_ID**/your-file-name`
-6. Add it to `.env.local` as `FIGMA_FILE_ID`
+3. Create a new Figma file and copy the file ID from the URL: `figma.com/design/**FILE_ID**/your-file-name`
+4. Add it to `.env.local` as `FIGMA_FILE_ID`
+5. In Figma, go to **Plugins → Development → Import plugin from manifest** and point it at `figma-plugin/manifest.json`
+6. Run the plugin once — it creates all color styles and component sets automatically
+7. **Publish** the styles in Figma (Main menu → Libraries → Publish) so the REST API can read them
 
 ---
 
@@ -84,10 +84,10 @@ claude   # open Claude Code in the repo
 
 Then use the slash commands:
 
-| Command               | Direction    | What it does                                                         |
-| --------------------- | ------------ | -------------------------------------------------------------------- |
-| `/sync-figma-to-code` | Figma → code | Reads Figma styles, diffs against tokens.json, updates with approval |
-| `/sync-code-to-figma` | code → Figma | Reads tokens.json, diffs against Figma, updates styles with approval |
+| Command               | Direction    | What it does                                                              |
+| --------------------- | ------------ | ------------------------------------------------------------------------- |
+| `/sync-figma-to-code` | Figma → code | Reads Figma color styles, diffs against tokens.json, updates with approval |
+| `/sync-code-to-figma` | code → Figma | Reads `_theme.css`, diffs against tokens.json, rebuilds plugin palette, prompts you to re-run the plugin in Figma |
 
 Both commands always **show a diff and ask for confirmation** before writing anything.
 
@@ -100,7 +100,7 @@ Both commands always **show a diff and ask for confirmation** before writing any
 CSS variables are generated from it:
 
 ```bash
-npm run tokens:build   # updates the /* tokens:start */ … /* tokens:end */ block in globals.css
+npm run tokens:build   # updates the /* tokens:start */ … /* tokens:end */ block in _theme.css
 ```
 
 Tailwind CSS v4 reads CSS variables natively — no `tailwind.config.ts` needed.
@@ -113,19 +113,20 @@ Tailwind CSS v4 reads CSS variables natively — no `tailwind.config.ts` needed.
 | `color.green.700` | `color/green/700` | `--color-green-700` |
 | `color.gray.900`  | `color/gray/900`  | `--color-gray-900`  |
 
-Token values are hex colors sourced from Figma. `tokens:build` writes them into a `@theme` block in `globals.css`, overriding Tailwind v4's built-in oklch values so the entire codebase uses your Figma colors.
+Token values are hex colors sourced from Figma. `tokens:build` writes them into a `@theme` block in `_theme.css`, overriding Tailwind v4's built-in oklch values so the entire codebase uses your Figma colors.
 
 ---
 
 ## Scripts
 
-| Script                 | What it does                              |
-| ---------------------- | ----------------------------------------- |
-| `npm run dev`          | Start Next.js dev server                  |
-| `npm run storybook`    | Start Storybook                           |
-| `npm run tokens:build` | Regenerate CSS variables from tokens.json |
-| `npm run figma:pull`   | CLI: Figma API → tokens.json (no AI)      |
-| `npm run figma:push`   | CLI: tokens.json → Figma API (no AI)      |
+| Script                  | What it does                                              |
+| ----------------------- | --------------------------------------------------------- |
+| `npm run dev`           | Start Next.js dev server                                  |
+| `npm run storybook`     | Start Storybook                                           |
+| `npm run tokens:build`  | Regenerate CSS variables from tokens.json                 |
+| `npm run plugin:build`  | Regenerate RGB palette in figma-plugin/code.js            |
+| `npm run figma:pull`    | CLI: Figma color styles → tokens.json (no AI)             |
+| `npm run figma:push`    | CLI: rebuild plugin palette, then re-run plugin in Figma  |
 
 ---
 
@@ -137,21 +138,24 @@ two-way-design-starter/
 │   ├── sync-figma-to-code.md    ← Claude slash command
 │   └── sync-code-to-figma.md   ← Claude slash command
 ├── .storybook/
+├── figma-plugin/
+│   ├── manifest.json            ← plugin entry point
+│   └── code.js                  ← generates styles + components in Figma
 ├── scripts/
 │   ├── build-tokens.ts          ← tokens.json → CSS variables
-│   ├── figma-to-tokens.ts       ← Figma API → tokens.json
-│   └── tokens-to-figma.ts       ← tokens.json → Figma API
+│   ├── build-plugin.ts          ← tokens.json → RGB palette in code.js
+│   ├── figma-to-tokens.ts       ← Figma color styles → tokens.json
+│   └── tokens-to-figma.ts       ← rebuilds plugin palette for re-run
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx             ← login form demo
-│   │   └── globals.css          ← CSS vars generated from tokens
+│   │   └── _theme.css           ← CSS vars generated from tokens
 │   ├── components/
 │   │   ├── Button/
 │   │   ├── Input/
 │   │   └── Checkbox/
 │   └── tokens/tokens.json       ← single source of truth
 ├── .env.example
-├── .mcp.json                    ← MCP server config for Claude Code
 └── CLAUDE.md                    ← project brief for Claude
 ```
 
